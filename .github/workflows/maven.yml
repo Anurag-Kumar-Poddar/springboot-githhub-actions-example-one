@@ -58,7 +58,7 @@ jobs:
       mariadb: 
         image: mariadb:10.6.21
         ports:
-          - 3305:3306
+          - 3306:3306
         env:
           MARIADB_ROOT_PASSWORD: maria@123
           MARIADB_DATABASE: monitoring
