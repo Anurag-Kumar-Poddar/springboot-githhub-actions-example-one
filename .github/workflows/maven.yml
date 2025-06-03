@@ -6,7 +6,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Java CI with Maven
+name: Java CI with Maven (with database)
 
 on:
   push:
@@ -81,9 +81,9 @@ jobs:
           SPRING_DATASOURCE_USERNAME: root
           SPRING_DATASOURCE_PASSWORD: maria@123
       
-      - name: Upload JAR file (With DB)
-        uses: actions/upload-artifcat@v4
-        with:
-          name: my-java-app-with-db
-          path: target/*.jar
+      # - name: Upload JAR file (With DB)
+      #   uses: actions/upload-artifcat@v4
+      #   with:
+      #     name: my-java-app-with-db
+      #     path: target/*.jar
       
