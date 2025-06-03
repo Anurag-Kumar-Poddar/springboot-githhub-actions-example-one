@@ -54,20 +54,6 @@ jobs:
     name: Build with database
     runs-on: ubantu-latest
 
-    services: 
-      mariadb: 
-        image: mariadb:10.6.21
-        ports:
-          - 3306:3306
-        env:
-          MARIADB_ROOT_PASSWORD: maria@123
-          MARIADB_DATABASE: monitoring
-        options: >-
-          --health-cmd="mysqladmin ping --silent"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
     steps:
       - uses: actions/checkout@v4
 
