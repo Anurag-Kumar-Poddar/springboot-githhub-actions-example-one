@@ -15,10 +15,10 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build:
-
+  no-db-build:
+    name: Build without datbase
     runs-on: ubuntu-latest
-
+    
     steps:
     - uses: actions/checkout@v4
     - name: Set up JDK 17
@@ -47,8 +47,47 @@ jobs:
     - name: Upload JAR file
       uses: actions/upload-artifact@v4
       with:
-        name: my-java-app
+        name: my-java-app-without-db
         path: target/*.jar
-      
 
+  db-build: 
+    name: Build with database
+    runs-on: ubantu-latest
+
+    services: 
+      mariadb: 
+        image: mariadb:10.6.21
+        ports:
+          - 3305:3306
+        env:
+          MARIADB_ROOT_PASSWORD: maria@123
+          MARIADB_DATABASE: monitoring
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Wait for MariaDb to be ready
+        run: |
+          echo "Waiting for mariadb..."
+          for i in {1..30); do
+            nc -z localhost 3305 & echo "Mariadb is ready!" && break
+            echo "Waiting..."
+            sleep 2
+          done
+      
+      - name: Upload JAR file (With DB)
+        uses: actions/upload-artifcat@v4
+        with:
+          name: my-java-app-with-db
+          path: target/*.jar
       
