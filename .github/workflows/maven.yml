@@ -6,7 +6,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Java CI with Maven
+name: Java CI with Maven (with database)
 
 on:
   push:
@@ -15,58 +15,44 @@ on:
     branches: [ "master" ]
 
 jobs:
-  no-db-build:
-    name: Build without datbase
-    runs-on: ubuntu-latest
+  # no-db-build:
+  #   name: Build without datbase
+  #   runs-on: ubuntu-latest
     
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: maven
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
-          # line 34 is coping the jar file generated after maven build into artifact directory
-          # line 35 is verifying if the artifact is present (part of debugging process)
-           # mkdir artifacts && cp target/*.jar artifacts
-           # cd artifacts && ls
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #   - name: Set up JDK 17
+  #     uses: actions/setup-java@v4
+  #     with:
+  #       java-version: '17'
+  #       distribution: 'temurin'
+  #       cache: maven
+  #   - name: Build with Maven
+  #     run: mvn -B package --file pom.xml
+  #         # line 34 is coping the jar file generated after maven build into artifact directory
+  #         # line 35 is verifying if the artifact is present (part of debugging process)
+  #          # mkdir artifacts && cp target/*.jar artifacts
+  #          # cd artifacts && ls
 
-    # - name: Save artifact
-    #   uses: actions/upload-artifact@v2
-    #   with: 
-    #     name: github-actions-artifact
-    #     path: artifactory
+  #   # - name: Save artifact
+  #   #   uses: actions/upload-artifact@v2
+  #   #   with: 
+  #   #     name: github-actions-artifact
+  #   #     path: artifactory
 
-    # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
-    # - name: Update dependency graph
-    #   uses: advanced-security/maven-dependency-submission-action@571e99aab1055c2e71a1e2309b9691de18d6b7d6
+  #   # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
+  #   # - name: Update dependency graph
+  #   #   uses: advanced-security/maven-dependency-submission-action@571e99aab1055c2e71a1e2309b9691de18d6b7d6
 
-    - name: Upload JAR file
-      uses: actions/upload-artifact@v4
-      with:
-        name: my-java-app-without-db
-        path: target/*.jar
+  #   - name: Upload JAR file
+  #     uses: actions/upload-artifact@v4
+  #     with:
+  #       name: my-java-app-without-db
+  #       path: target/*.jar
 
   db-build: 
     name: Build with database
     runs-on: ubantu-latest
-
-    services: 
-      mariadb: 
-        image: mariadb:10.6.21
-        ports:
-          - 3305:3306
-        env:
-          MARIADB_ROOT_PASSWORD: maria@123
-          MARIADB_DATABASE: monitoring
-        options: >-
-          --health-cmd="mysqladmin ping --silent"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
 
     steps:
       - uses: actions/checkout@v4
@@ -76,18 +62,28 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-      - name: Wait for MariaDb to be ready
+      - name: Start MariaDB services
         run: |
-          echo "Waiting for mariadb..."
-          for i in {1..30); do
-            nc -z localhost 3305 & echo "Mariadb is ready!" && break
-            echo "Waiting..."
-            sleep 2
-          done
+          sudo apt-get update
+          sudo apt-get install -y mariadb-server
+          sudo systemctl start mariadb
+          sudo mysql -u root -e "CREATE DATABASE IF NOT EXISTS monitoring;"
+          sudo mysql -u root -e "GRANT ALL PRIVILEGES ON monitoring.* TO 'root'@'%' IDNTIFIED BY 'maria@123'"
+          sudo mysql -u root -e "FLUS PRIVILEGES;"
+
+      - name: Build with maven
+        run: mvn clean install
+
+      - name: Run test
+        run: mvn test
+        env: 
+          SPRING_DATASOURCE_URL: jdbc:mariadb://localhost:3305/monitoring
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: maria@123
       
-      - name: Upload JAR file (With DB)
-        uses: actions/upload-artifcat@v4
-        with:
-          name: my-java-app-with-db
-          path: target/*.jar
+      # - name: Upload JAR file (With DB)
+      #   uses: actions/upload-artifcat@v4
+      #   with:
+      #     name: my-java-app-with-db
+      #     path: target/*.jar
       
