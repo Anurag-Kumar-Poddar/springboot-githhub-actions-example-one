@@ -18,34 +18,26 @@ jobs:
   build: 
     name: Build with database
     runs-on: ubantu-latest
-
-    steps:
+    services: 
+      mariadb:
+        image: mariadb:latest
+        env: 
+          MYSQL_ROOT_PASSWORD: maria@123
+          MYSQL_DATABASE: monitoring
+        ports:
+          - 3306:3306
+        options: --health--cmd "mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 2
+    steps: 
       - uses: actions/checkout@v4
-
-      - name: Set up JDK 17
+      - name: Set UP JDK 17
         uses: actions/setup-java@v4
-        with:
+        with: 
           java-version: '17'
           distribution: 'temurin'
-      - name: Start MariaDB services
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y mariadb-server
-          sudo systemctl start mariadb
-          sudo mysql -u root -e "CREATE DATABASE IF NOT EXISTS monitoring;"
-          sudo mysql -u root -e "GRANT ALL PRIVILEGES ON monitoring.* TO 'root'@'%' IDNTIFIED BY 'maria@123'"
-          sudo mysql -u root -e "FLUS PRIVILEGES;"
-
-      - name: Build with maven
-        run: mvn clean install
-
-      - name: Run test
-        run: mvn test
-        env: 
-          SPRING_DATASOURCE_URL: jdbc:mariadb://localhost:3305/monitoring
-          SPRING_DATASOURCE_USERNAME: root
-          SPRING_DATASOURCE_PASSWORD: maria@123
-      
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
+      - name: Run tests
+        run: mvn -B test --file pom.xml
       - name: Upload JAR file (With DB)
         uses: actions/upload-artifcat@v4
         with:
